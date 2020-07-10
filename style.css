@@ -1,0 +1,10 @@
+label {
+    display: inline-block;
+    width: 70px;
+}
+
+svg {
+    background-color: white;
+    border: 1px solid rgba(6,6,6,.3);
+    padding: 10px;
+}

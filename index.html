@@ -3,10 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <title>Fuzzy ADSR</title>
-    <script src="lib/fuzzyis-v1.0.0.js"></script>
-    <script src="main.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Fuzzy ADSR classifier</a>
+    </nav>
+    <div class="container mt-5">
+        <div id="app">
+            <h1>Type of envelope:</h1>
+            <h5>Sharpness from 0 (very sharp) to 10 (very smooth): <span>{{ sharpness }}</span></h5>
+            <envelope-generator
+                    :width="600"
+                    :height="200"
+                    :attack="form.attackTime"
+                    :decay="form.decayTime"
+                    :sustain="form.sustainLevel"
+                    :release="form.releaseTime"
+                    @envelope-sharpness="getSharpness"
+            >
+            </envelope-generator>
+            <form class="envelope-controller">
+                <div class="form-group">
+                    <label>Attack:</label>
+                    <div>0 ms - 200 ms</div>
+                    <input type="range" class="form-control-range" min="0" max="1" step="0.01" v-model.number="form.attackTime">
+                </div>
+                <div class="form-group">
+                    <label>Decay:</label>
+                    <input type="range" class="form-control-range" min="0" max="1" step="0.01" v-model.number="form.decayTime">
+                </div>
+                <div class="form-group">
+                    <label>Sustain:</label>
+                    <input type="range" class="form-control-range" min="0" max="1" step="0.01" v-model.number="form.sustainLevel">
+                </div>
+                <div class="form-group">
+                    <label>Release:</label>
+                    <input type="range" class="form-control-range" min="0" max="1" step="0.01" v-model.number="form.releaseTime">
+                </div>
+                <button class="btn btn-success" type="button" @click="start">Start sound</button>
+                <button class="btn btn-danger" type="button" @click="stop">Panic !! (stop sound)</button>
+            </form>
+        </div>
+    </div>
 
+    <script type="text/x-template" id="adsr">
+        <svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg" baseProfile="full">
+            <path :d="path" stroke="#666666" stroke-width="3" fill="none"></path>
+        </svg>
+    </script>
 </body>
+<script src="lib/fuzzyis-v1.0.0.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="main.js"></script>
 </html>
