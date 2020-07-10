@@ -1,4 +1,4 @@
-// fuzzy model
+// fuzzy model initialisation
 
 const sys = new fuzzyis.FIS("fuzzy_adsr")
 
@@ -77,40 +77,56 @@ sys.rules = [
     ),
 ];
 
+/**
+ * Compute the precise output from the 4 fuzzy inputs given. The result is fixed to 1 decimal.
+ *
+ * @param values list of the 4 fuzzy input values
+ * @returns {number} precise fuzzy output
+ */
 function computeTypeValue(values) {
     return parseFloat(sys.getPreciseOutput(values)[0].toFixed(1))
 }
 
-// simple test
+// simple test to see if the model is working compared the matlab model
+// this assertion return an error message if the result is different
 
 console.assert(
     computeTypeValue([48.09, 125, -7.008, 155.3]) === 2.5,
     'The system is not ready to work !'
 )
 
-// scale function
+// scale functions: the GUI of the envelope use a scale from 0 to 1, we need to scale the values
 
+// 1 for 200 ms
 function scaleAttack(value) {
     return value * 200
 }
 
+// 1 for 1000 ms
 function scaleDecayOrRelease(value) {
     return value * 1000
 }
 
+// simple function to compute log10 in js
 function log10(x) {
     return Math.log(x)/Math.LN10;
 }
 
+// the sustain is in decibel: we defined -40 as the minimum value because under this value, the value is -Infinity
+// which is not a valid input for our model
+// the input value is the gain between 0 and 1, we want to compute the gain in dB by using the formula
+// GdB = 20 * log10(value)
 function scaleSustain(value) {
     let scaled = 20 * log10(value)
-    return scaled >= -40.0 ? scaled : -40.0
+    return scaled >= -40.0 ? scaled : -40.0 // seil the value to be -40
 }
 
+// The GUI is based on https://jsfiddle.net/bc_rikko/75k8toud/ which use the framework vue js (https://vuejs.org/)
+//
 const EnvelopeGenerator = Vue.component('envelope-generator', {
     name: 'EnvelopeGenerator',
-    template: "#adsr",
-    props: {
+    template: "#adsr", // use the svg as template
+    props: { // get the properties from the HTML template and define each value as Numbers and default values
         width: {
             type: Number,
             default: 640
@@ -122,7 +138,7 @@ const EnvelopeGenerator = Vue.component('envelope-generator', {
         attack: {
             type: Number,
             required: true,
-            validator: v => 0 <= v && v <= 1
+            validator: v => 0 <= v && v <= 1 // this is to verify that the input is between 0 and 1 only
         },
         decay: {
             type: Number,
@@ -140,17 +156,17 @@ const EnvelopeGenerator = Vue.component('envelope-generator', {
             validator: v => 0 <= v && v <= 1
         }
     },
-    data () {
+    data () { // all the data of our envelope are contained here
         return {
-            path: '',
-            sharpness: 0.0
+            path: '', // final path to draw in the svg template
+            sharpness: 0.0 // sharpness value compute at each draw
         }
     },
-    mounted() {
-        this.draw();
-        this.computeSharpness();
+    mounted() { // when the component is first drown
+        this.draw(); // draw the default path
+        this.computeSharpness(); // compute the sharpness value
     },
-    watch: {
+    watch: { // when the user move the slider, some functions need to be called
         attack: function () {
             this.draw();
             this.computeSharpness();
@@ -170,12 +186,13 @@ const EnvelopeGenerator = Vue.component('envelope-generator', {
     },
     methods: {
         draw() {
+            // svg ratio
             const wRetio = this.width / 4;
             const hRetio = this.height / 1;
 
-            const paths = [];
+            const paths = []; // list of points
             let x, y;
-            x = y = 0;
+            x = y = 0; // origin of the graph
 
             // attack
             x = this.attack * wRetio;
@@ -199,38 +216,42 @@ const EnvelopeGenerator = Vue.component('envelope-generator', {
             this.path = `M0 ${this.height},` + paths.join(',');
         },
         computeSharpness() {
+            // give to the function computeTypeValue a list of the 4 inputs given from the sliders and already scaled
             let result = computeTypeValue([scaleAttack(this.attack),
                 scaleDecayOrRelease(this.decay),
                 scaleSustain(this.sustain),
                 scaleDecayOrRelease(this.release)])
+            // save the result
             this.sharpness = result
+            // send the value to the parent component to be displayed later
             this.$emit('envelope-sharpness', this.sharpness)
         }
     }
 });
 
+// parent component
 new Vue({
     el: '#app',
-    components: { EnvelopeGenerator },
+    components: { EnvelopeGenerator }, // the envelope component is a child of this component
     data() {
         return {
-            form: {
+            form: { // form data
                 attackTime: 0.5,
                 decayTime: 0.3,
                 sustainLevel: 0.5,
                 releaseTime: 1.0
             },
-            ctx: new AudioContext(),
+            ctx: new AudioContext(), // audio context to provide sound output
             osc: null,
             adsr: null,
-            sharpness: 'unknown',
-            type: 'unknown'
+            sharpness: 'unknown', // sharpness value to display
+            type: 'unknown' // BONUS: type to display according to the sharpness value
         }
     },
 
     methods: {
-        start() {
-            this.osc = this.ctx.createOscillator();
+        start() { // handle the 'start' button
+            this.osc = this.ctx.createOscillator(); // create a sine wave to play through the speaker
             this.adsr = this.ctx.createGain();
 
             // osc -> gain -> output
@@ -248,7 +269,7 @@ new Vue({
             const t2 = this.form.decayTime;
             this.adsr.gain.setTargetAtTime(this.form.sustainLevel, t1, t2);
         },
-        stop() {
+        stop() { // handle the 'stop' button
             const t = this.ctx.currentTime;
             this.adsr.gain.cancelScheduledValues(t);
             this.adsr.gain.setValueAtTime(this.adsr.gain.value, t);
@@ -261,6 +282,7 @@ new Vue({
                 }
             }, 10);
         },
+        // callback function for the child component to send the value back to the parent component
         getSharpness(sharpness) {
             this.sharpness = sharpness
         }

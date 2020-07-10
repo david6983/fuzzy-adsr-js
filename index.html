@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Fuzzy ADSR</title>
+    <!-- add the personal css sheet and bootstrap css framework to have a beautiful render -->
     <link rel="stylesheet" type="text/css" href="style.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 <body>
+    <!-- Simple header navigation bar to display the title -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">Fuzzy ADSR classifier</a>
     </nav>
+    <!-- we use a container to make the app responsive for any device -->
     <div class="container mt-5">
+        <!-- entry point for our vue js component -->
         <div id="app">
             <h1>Type of envelope:</h1>
+            <!-- the sharpness value will be displayed here -->
             <h5>Sharpness from 0 (very sharp) to 10 (very smooth): <span>{{ sharpness }}</span></h5>
+            <!-- render the envelope component -->
             <envelope-generator
                     :width="600"
                     :height="200"
@@ -24,6 +30,7 @@
                     @envelope-sharpness="getSharpness"
             >
             </envelope-generator>
+            <!-- 4 sliders to change the inputs -->
             <form class="envelope-controller">
                 <div class="form-group">
                     <label>Attack:</label>
@@ -47,14 +54,18 @@
             </form>
         </div>
     </div>
-
+    <!-- the envelope use svg to display the path of the envelope -->
     <script type="text/x-template" id="adsr">
         <svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg" baseProfile="full">
             <path :d="path" stroke="#666666" stroke-width="3" fill="none"></path>
         </svg>
     </script>
 </body>
+<!-- NOTE: javascript is loaded at the end because the framework need to read the HTML template content before -->
+<!-- import the fuzzy logic library: https://github.com/maksnester/fuzzyIS -->
 <script src="lib/fuzzyis-v1.0.0.js"></script>
+<!-- import vue js framework -->
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<!-- import our script -->
 <script src="main.js"></script>
 </html>
